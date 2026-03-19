@@ -61,7 +61,7 @@ button.setOnClickListener {
 
     if (!response.isSuccessful) {
         runOnUiThread {
-            output.text = "Thambi: API Error 😢"
+            output.text = "Error: $responseData"
         }
         return
     }

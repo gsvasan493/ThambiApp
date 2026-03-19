@@ -1,11 +1,4 @@
-android {
-    compileSdk 34
-
-    defaultConfig {
-        minSdk 24
-        targetSdk 34
-    }
-}plugins {
+plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
 }
@@ -30,5 +23,6 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
+    implementation 'androidx.appcompat:appcompat:1.6.1'
 }

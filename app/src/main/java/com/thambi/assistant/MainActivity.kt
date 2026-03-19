@@ -73,27 +73,27 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     // 🔥 MAIN COMMAND HANDLER
-    private fun handleCommand(text: String): String {
+   private fun handleCommand(text: String): String {
 
-        return try {
+    return try {
 
-            // 📱 OPEN APPS
-            when {
-               text.contains("open") -> {
-    val appName = text.replace("open", "").trim()
+        when {
 
-    val success = openAnyApp(appName)
+            // 📱 OPEN ANY APP
+            text.contains("open") -> {
+                val appName = text.replace("open", "").trim()
 
-    if (success) {
-        "Opening $appName"
-    } else {
-        "App not found"
-    }
-}
+                val success = openAnyApp(appName)
+
+                if (success) {
+                    "Opening $appName"
+                } else {
+                    "App not found"
                 }
+            }
 
-                // ⏰ SET ALARM
-               text.contains("alarm") -> {
+            // ⏰ SET ALARM
+            text.contains("alarm") -> {
 
                 val numbers = Regex("\\d+")
                     .findAll(text)
@@ -104,13 +104,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     var hour = numbers[0]
                     val minute = numbers[1]
 
-                    // ✅ AM / PM logic
-                    if (text.contains("pm") && hour < 12) {
-                        hour += 12
-                    }
-                    if (text.contains("am") && hour == 12) {
-                        hour = 0
-                    }
+                    if (text.contains("pm") && hour < 12) hour += 12
+                    if (text.contains("am") && hour == 12) hour = 0
 
                     setAlarm(hour, minute)
                     "Setting alarm for $hour:$minute"
@@ -129,7 +124,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     } catch (e: Exception) {
         "Something went wrong 😢"
     }
-    }
+}
 private fun openAnyApp(appName: String): Boolean {
     val pm = packageManager
     val intent = Intent(Intent.ACTION_MAIN, null)

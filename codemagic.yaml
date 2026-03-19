@@ -6,8 +6,12 @@ workflows:
       vars:
         PACKAGE_NAME: "com.thambi.assistant"
     scripts:
+      - name: Install Gradle
+        script: |
+          brew install gradle
+
       - name: Build APK
         script: |
-          ./gradlew assembleDebug
+          gradle build
     artifacts:
       - app/build/outputs/**/*.apk

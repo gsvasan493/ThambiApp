@@ -56,20 +56,34 @@ button.setOnClickListener {
                 }
             }
 
-            override fun onResponse(call: Call, response: Response) {
-                val responseData = response.body?.string()
-                val jsonObj = JSONObject(responseData)
+           override fun onResponse(call: Call, response: Response) {
+    val responseData = response.body?.string()
 
-                val reply = jsonObj
-                    .getJSONArray("choices")
-                    .getJSONObject(0)
-                    .getJSONObject("message")
-                    .getString("content")
+    if (!response.isSuccessful) {
+        runOnUiThread {
+            output.text = "Thambi: API Error 😢"
+        }
+        return
+    }
 
-                runOnUiThread {
-                    output.text = "Thambi: $reply"
-                }
-            }
+    try {
+        val jsonObj = JSONObject(responseData!!)
+
+        val reply = jsonObj
+            .getJSONArray("choices")
+            .getJSONObject(0)
+            .getJSONObject("message")
+            .getString("content")
+
+        runOnUiThread {
+            output.text = "Thambi: $reply"
+        }
+    } catch (e: Exception) {
+        runOnUiThread {
+            output.text = "Thambi: Parsing error 😢"
+        }
+    }
+}
         })
     }
 }

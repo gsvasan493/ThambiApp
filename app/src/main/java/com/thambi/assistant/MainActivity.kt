@@ -39,9 +39,9 @@ button.setOnClickListener {
 
         json.put("messages", messages)
 
-        val body = json.toRequestBody(
-            "application/json".toMediaType()
-        )
+       val body = json.toString().toRequestBody(
+    "application/json".toMediaType()
+)
 
         val request = Request.Builder()
             .url("https://api.openai.com/v1/chat/completions")

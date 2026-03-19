@@ -1,31 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="20dp"
+    android:gravity="center">
 
-    <!-- Output Text -->
+    <Button
+        android:id="@+id/micButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🎤 Speak"/>
+
     <TextView
         android:id="@+id/outputText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Thambi: Hello da 👋"
-        android:textSize="18sp"
-        android:padding="10dp"/>
-
-    <!-- Input Box -->
-    <EditText
-        android:id="@+id/userInput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Type something..." />
-
-    <!-- Button -->
-    <Button
-        android:id="@+id/sendButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Send" />
+        android:text="Say something..."
+        android:paddingTop="20dp"/>
 
 </LinearLayout>

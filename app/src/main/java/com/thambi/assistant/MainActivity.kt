@@ -44,7 +44,7 @@ button.setOnClickListener {
 
         val request = Request.Builder()
             .url("https://api.openai.com/v1/chat/completions")
-            .addHeader("Authorization", "Bearer YOUR_API_KEY_HERE")
+            .addHeader("Authorization", "Bearer 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")
             .post(body)
             .build()
 

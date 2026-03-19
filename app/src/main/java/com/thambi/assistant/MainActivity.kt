@@ -94,26 +94,41 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
                 // ⏰ SET ALARM
                text.contains("alarm") -> {
-    val numbers = Regex("\\d+").findAll(text).map { it.value.toInt() }.toList()
 
-    if (numbers.size >= 2) {
-        setAlarm(numbers[0], numbers[1])
-        "Opening alarm"
-    } else {
-        "Say time like 7 30"
-    }
-}
+                val numbers = Regex("\\d+")
+                    .findAll(text)
+                    .map { it.value.toInt() }
+                    .toList()
 
-                // 🗣 NORMAL
-                text.contains("hello") -> "Hello da 😄"
-                text.contains("time") -> Date().toString()
+                if (numbers.size >= 2) {
+                    var hour = numbers[0]
+                    val minute = numbers[1]
 
-                else -> "I heard: $text"
+                    // ✅ AM / PM logic
+                    if (text.contains("pm") && hour < 12) {
+                        hour += 12
+                    }
+                    if (text.contains("am") && hour == 12) {
+                        hour = 0
+                    }
+
+                    setAlarm(hour, minute)
+                    "Setting alarm for $hour:$minute"
+                } else {
+                    "Say time like 7 30 AM or PM"
+                }
             }
 
-        } catch (e: Exception) {
-            "Something went wrong 😢"
+            // 🗣 NORMAL
+            text.contains("hello") -> "Hello da 😄"
+            text.contains("time") -> Date().toString()
+
+            else -> "I heard: $text"
         }
+
+    } catch (e: Exception) {
+        "Something went wrong 😢"
+    }
     }
 private fun openAnyApp(appName: String): Boolean {
     val pm = packageManager
@@ -151,13 +166,13 @@ private fun openAnyApp(appName: String): Boolean {
     }
 
     // ⏰ SET ALARM SAFELY
-   private fun setAlarm(hour: Int, minute: Int) {
+  private fun setAlarm(hour: Int, minute: Int) {
     try {
         val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
             putExtra(AlarmClock.EXTRA_HOUR, hour)
             putExtra(AlarmClock.EXTRA_MINUTES, minute)
             putExtra(AlarmClock.EXTRA_MESSAGE, "Thambi Alarm")
-            putExtra(AlarmClock.EXTRA_SKIP_UI, false) // important
+            putExtra(AlarmClock.EXTRA_SKIP_UI, false)
         }
 
         startActivity(intent)

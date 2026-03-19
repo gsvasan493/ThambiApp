@@ -3,15 +3,13 @@ package com.thambi.assistant
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.provider.AlarmClock
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import java.util.*
-import android.content.pm.PackageManager
-import android.provider.AlarmClock
-import java.util.Calendar
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
@@ -35,105 +33,131 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun startVoiceInput() {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
+        try {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            intent.putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
 
-        startActivityForResult(intent, REQUEST_CODE_SPEECH)
+            startActivityForResult(intent, REQUEST_CODE_SPEECH)
+        } catch (e: Exception) {
+            output.text = "Voice not supported 😢"
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == REQUEST_CODE_SPEECH && resultCode == Activity.RESULT_OK) {
+
             val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spokenText = result?.get(0)?.lowercase()?.trim() ?: ""
+
+            if (result == null || result.isEmpty()) {
+                output.text = "Didn't catch that 😅"
+                return
+            }
+
+            val spokenText = result[0].lowercase().trim()
 
             output.text = "You: $spokenText"
 
-            val reply = getReply(spokenText)
+            val reply = handleCommand(spokenText)
 
             output.append("\nThambi: $reply")
             speak(reply)
         }
     }
 
-    private fun getReply(input: String): String {
-    val text = input.lowercase()
+    // 🔥 MAIN COMMAND HANDLER
+    private fun handleCommand(text: String): String {
 
-    return when {
+        return try {
 
-        // 🔓 OPEN APPS
-        text.contains("open youtube") -> {
-            openApp("com.google.android.youtube")
-            "Opening YouTube 🎬"
+            // 📱 OPEN APPS
+            when {
+                text.contains("youtube") -> {
+                    openApp("com.google.android.youtube")
+                    "Opening YouTube"
+                }
+
+                text.contains("whatsapp") -> {
+                    openApp("com.whatsapp")
+                    "Opening WhatsApp"
+                }
+
+                text.contains("chrome") -> {
+                    openApp("com.android.chrome")
+                    "Opening Chrome"
+                }
+
+                // ⏰ SET ALARM
+                text.contains("alarm") -> {
+                    val numbers = Regex("\\d+").findAll(text).map { it.value.toInt() }.toList()
+
+                    if (numbers.size >= 2) {
+                        val hour = numbers[0]
+                        val minute = numbers[1]
+
+                        setAlarm(hour, minute)
+                        "Setting alarm for $hour:$minute"
+                    } else {
+                        "Say time like 7 30"
+                    }
+                }
+
+                // 🗣 NORMAL
+                text.contains("hello") -> "Hello da 😄"
+                text.contains("time") -> Date().toString()
+
+                else -> "I heard: $text"
+            }
+
+        } catch (e: Exception) {
+            "Something went wrong 😢"
         }
+    }
 
-        text.contains("open whatsapp") -> {
-            openApp("com.whatsapp")
-            "Opening WhatsApp 💬"
+    // 📱 OPEN APP SAFELY
+    private fun openApp(packageName: String) {
+        try {
+            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            if (intent != null) {
+                startActivity(intent)
+            } else {
+                speak("App not installed")
+            }
+        } catch (e: Exception) {
+            speak("Cannot open app")
         }
+    }
 
-        text.contains("open chrome") -> {
-            openApp("com.android.chrome")
-            "Opening Chrome 🌐"
+    // ⏰ SET ALARM SAFELY
+    private fun setAlarm(hour: Int, minute: Int) {
+        try {
+            val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+                putExtra(AlarmClock.EXTRA_HOUR, hour)
+                putExtra(AlarmClock.EXTRA_MINUTES, minute)
+                putExtra(AlarmClock.EXTRA_MESSAGE, "Thambi Alarm")
+            }
+
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+            } else {
+                speak("No alarm app found")
+            }
+        } catch (e: Exception) {
+            speak("Cannot set alarm")
         }
-
-        // ⏰ SET ALARM
-       text.contains("alarm") -> {
-
-    val regex = Regex("(\\d{1,2})[: ](\\d{1,2})")
-    val match = regex.find(text)
-
-    if (match != null) {
-        val hour = match.groupValues[1].toInt()
-        val minute = match.groupValues[2].toInt()
-
-        setAlarm(hour, minute)
-        "Setting alarm for $hour:$minute ⏰"
-    } else {
-        "Tell time like 7 30 or 7:30"
-    }
-}
-
-        // 🗣 NORMAL RESPONSES
-        text.contains("hello") -> "Hello da 😄"
-        text.contains("name") -> "I am Thambi Assistant 🤖"
-        text.contains("time") -> Calendar.getInstance().time.toString()
-
-        else -> "I heard you say $input"
-    }
-}
-private fun openApp(packageName: String) {
-    try {
-        val intent = packageManager.getLaunchIntentForPackage(packageName)
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-        } else {
-            speak("App not installed")
-        }
-    } catch (e: Exception) {
-        speak("Unable to open app")
-    }
-}
-private fun setAlarm(hour: Int, minute: Int) {
-    val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
-        putExtra(AlarmClock.EXTRA_HOUR, hour)
-        putExtra(AlarmClock.EXTRA_MINUTES, minute)
-        putExtra(AlarmClock.EXTRA_MESSAGE, "Thambi Alarm")
     }
 
-    if (intent.resolveActivity(packageManager) != null) {
-        startActivity(intent)
-    } else {
-        speak("No alarm app found")
-    }
-}
+    // 🔊 TEXT TO SPEECH
     private fun speak(text: String) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        if (::tts.isInitialized) {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
     }
 
     override fun onInit(status: Int) {

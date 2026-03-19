@@ -8,6 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,9 +39,8 @@ button.setOnClickListener {
 
         json.put("messages", messages)
 
-        val body = RequestBody.create(
-            MediaType.get("application/json"),
-            json.toString()
+        val body = json.toRequestBody(
+            "application/json".toMediaType()
         )
 
         val request = Request.Builder()

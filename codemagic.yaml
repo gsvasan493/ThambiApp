@@ -1,0 +1,12 @@
+workflows:
+  android-workflow:
+    name: Android Build
+    scripts:
+      - name: Give permission
+        script: chmod +x gradlew
+
+      - name: Build APK
+        script: ./gradlew assembleDebug
+
+    artifacts:
+      - app/build/outputs/**/*.apk

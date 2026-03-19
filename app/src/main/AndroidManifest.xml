@@ -1,21 +1,20 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.thambi.assistant">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:allowBackup="true"
-        android:label="Thambi"
-        android:theme="@android:style/Theme.Material.Light">
+        android:label="Thambi Assistant"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <activity
-    android:name=".MainActivity"
-    android:exported="true">
+            android:name=".MainActivity"
+            android:exported="true">
 
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-    </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
 
         </activity>
 
     </application>
+
 </manifest>

@@ -136,23 +136,21 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     // ⏰ SET ALARM SAFELY
-    private fun setAlarm(hour: Int, minute: Int) {
-        try {
-            val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
-                putExtra(AlarmClock.EXTRA_HOUR, hour)
-                putExtra(AlarmClock.EXTRA_MINUTES, minute)
-                putExtra(AlarmClock.EXTRA_MESSAGE, "Thambi Alarm")
-            }
-
-            if (intent.resolveActivity(packageManager) != null) {
-                startActivity(intent)
-            } else {
-                speak("No alarm app found")
-            }
-        } catch (e: Exception) {
-            speak("Cannot set alarm")
+   private fun setAlarm(hour: Int, minute: Int) {
+    try {
+        val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+            putExtra(AlarmClock.EXTRA_HOUR, hour)
+            putExtra(AlarmClock.EXTRA_MINUTES, minute)
+            putExtra(AlarmClock.EXTRA_MESSAGE, "Thambi Alarm")
+            putExtra(AlarmClock.EXTRA_SKIP_UI, false) // important
         }
+
+        startActivity(intent)
+
+    } catch (e: Exception) {
+        speak("Cannot set alarm")
     }
+}
 
     // 🔊 TEXT TO SPEECH
     private fun speak(text: String) {

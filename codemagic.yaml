@@ -2,27 +2,15 @@ workflows:
   android-workflow:
     name: Android Build
 
-    scripts:
-      - name: Go inside folder
-        script: cd ThambiApp
-
-      - name: Give permission
-        script: chmod +x gradlew
-
-      - name: Build APK
-        script: ./gradlew assembleDebug
-
-    artifacts:
-      - ThambiApp/app/build/outputs/**/*.apkworkflows:
-  android-workflow:
-    name: Android Build
+    environment:
+      java: 17
 
     scripts:
       - name: Give permission
         script: chmod +x gradlew
 
       - name: Build APK
-        script: ./gradlew assembleDebug
+        script: ./gradlew assembleDebug --stacktrace
 
     artifacts:
       - app/build/outputs/**/*.apk

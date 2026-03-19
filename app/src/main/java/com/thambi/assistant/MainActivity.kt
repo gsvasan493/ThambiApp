@@ -1,92 +1,83 @@
 package com.thambi.assistant
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import okhttp3.*
-import org.json.JSONObject
-import java.io.IOException
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+
+    private lateinit var output: TextView
+    private lateinit var tts: TextToSpeech
+
+    private val REQUEST_CODE_SPEECH = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val input = findViewById<EditText>(R.id.userInput)
-        val button = findViewById<Button>(R.id.sendButton)
-        val output = findViewById<TextView>(R.id.outputText)
-        val client = OkHttpClient()
+        val micButton = findViewById<Button>(R.id.micButton)
+        output = findViewById(R.id.outputText)
 
-button.setOnClickListener {
-    val userText = input.text.toString()
+        tts = TextToSpeech(this, this)
 
-    if (userText.isNotEmpty()) {
-        output.text = "Thambi: thinking... 🤔"
-
-        val json = JSONObject()
-        json.put("model", "gpt-4.1-mini")
-
-        val messages = org.json.JSONArray()
-        val msg = JSONObject()
-        msg.put("role", "user")
-        msg.put("content", userText)
-        messages.put(msg)
-
-        json.put("messages", messages)
-
-       val body = json.toString().toRequestBody(
-    "application/json".toMediaType()
-)
-
-        val request = Request.Builder()
-            .url("https://api.openai.com/v1/chat/completions")
-            .addHeader("Authorization", "Bearer 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")
-            .post(body)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread {
-                    output.text = "Thambi: Error 😢"
-                }
-            }
-
-           override fun onResponse(call: Call, response: Response) {
-    val responseData = response.body?.string()
-
-    if (!response.isSuccessful) {
-        runOnUiThread {
-            output.text = "Error: $responseData"
-        }
-        return
-    }
-
-    try {
-        val jsonObj = JSONObject(responseData!!)
-
-        val reply = jsonObj
-            .getJSONArray("choices")
-            .getJSONObject(0)
-            .getJSONObject("message")
-            .getString("content")
-
-        runOnUiThread {
-            output.text = "Thambi: $reply"
-        }
-    } catch (e: Exception) {
-        runOnUiThread {
-            output.text = "Thambi: Parsing error 😢"
+        micButton.setOnClickListener {
+            startVoiceInput()
         }
     }
-}
-        })
+
+    private fun startVoiceInput() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
+
+        startActivityForResult(intent, REQUEST_CODE_SPEECH)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_CODE_SPEECH && resultCode == Activity.RESULT_OK) {
+            val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = result?.get(0) ?: ""
+
+            output.text = "You: $spokenText"
+
+            val reply = getReply(spokenText)
+
+            output.append("\nThambi: $reply")
+            speak(reply)
+        }
+    }
+
+    private fun getReply(input: String): String {
+        return when {
+            input.contains("hello", true) -> "Hello da 😄"
+            input.contains("name", true) -> "I am Thambi Assistant 🤖"
+            input.contains("time", true) -> Date().toString()
+            else -> "I heard you say $input"
+        }
+    }
+
+    private fun speak(text: String) {
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale.US
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        tts.shutdown()
     }
 }
-    }
-}
-        

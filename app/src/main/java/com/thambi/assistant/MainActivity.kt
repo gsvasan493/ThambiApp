@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         if (requestCode == REQUEST_CODE_SPEECH && resultCode == Activity.RESULT_OK) {
             val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spokenText = result?.get(0) ?: ""
+            val spokenText = result?.get(0)?.lowercase()?.trim() ?: ""
 
             output.text = "You: $spokenText"
 
@@ -82,19 +82,21 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         // ⏰ SET ALARM
-        text.contains("set alarm") -> {
-            val numbers = text.split(" ").filter { it.toIntOrNull() != null }
+       text.contains("alarm") -> {
 
-            if (numbers.size >= 2) {
-                val hour = numbers[0].toInt()
-                val minute = numbers[1].toInt()
+    val regex = Regex("(\\d{1,2})[: ](\\d{1,2})")
+    val match = regex.find(text)
 
-                setAlarm(hour, minute)
-                "Alarm set for $hour:$minute ⏰"
-            } else {
-                "Tell time like 'set alarm 7 30'"
-            }
-        }
+    if (match != null) {
+        val hour = match.groupValues[1].toInt()
+        val minute = match.groupValues[2].toInt()
+
+        setAlarm(hour, minute)
+        "Setting alarm for $hour:$minute ⏰"
+    } else {
+        "Tell time like 7 30 or 7:30"
+    }
+}
 
         // 🗣 NORMAL RESPONSES
         text.contains("hello") -> "Hello da 😄"
@@ -105,13 +107,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 }
 private fun openApp(packageName: String) {
-    val pm = packageManager
-    val intent = pm.getLaunchIntentForPackage(packageName)
-
-    if (intent != null) {
-        startActivity(intent)
-    } else {
-        speak("App not installed")
+    try {
+        val intent = packageManager.getLaunchIntentForPackage(packageName)
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } else {
+            speak("App not installed")
+        }
+    } catch (e: Exception) {
+        speak("Unable to open app")
     }
 }
 private fun setAlarm(hour: Int, minute: Int) {

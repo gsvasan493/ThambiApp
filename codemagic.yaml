@@ -1,7 +1,15 @@
 workflows:
   android-workflow:
     name: Android Build
+
+    environment:
+      vars:
+        PROJECT_PATH: ThambiApp
+
     scripts:
+      - name: Go to project folder
+        script: cd $PROJECT_PATH
+
       - name: Give permission
         script: chmod +x gradlew
 
@@ -9,4 +17,4 @@ workflows:
         script: ./gradlew assembleDebug
 
     artifacts:
-      - app/build/outputs/**/*.apk
+      - ThambiApp/app/build/outputs/**/*.apk

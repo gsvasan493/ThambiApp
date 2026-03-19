@@ -79,35 +79,30 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             // 📱 OPEN APPS
             when {
-                text.contains("youtube") -> {
-                    openApp("com.google.android.youtube")
-                    "Opening YouTube"
-                }
+               text.contains("open") -> {
+    val appName = text.replace("open", "").trim()
 
-                text.contains("whatsapp") -> {
-                    openApp("com.whatsapp")
-                    "Opening WhatsApp"
-                }
+    val success = openAnyApp(appName)
 
-                text.contains("chrome") -> {
-                    openApp("com.android.chrome")
-                    "Opening Chrome"
+    if (success) {
+        "Opening $appName"
+    } else {
+        "App not found"
+    }
+}
                 }
 
                 // ⏰ SET ALARM
-                text.contains("alarm") -> {
-                    val numbers = Regex("\\d+").findAll(text).map { it.value.toInt() }.toList()
+               text.contains("alarm") -> {
+    val numbers = Regex("\\d+").findAll(text).map { it.value.toInt() }.toList()
 
-                    if (numbers.size >= 2) {
-                        val hour = numbers[0]
-                        val minute = numbers[1]
-
-                        setAlarm(hour, minute)
-                        "Setting alarm for $hour:$minute"
-                    } else {
-                        "Say time like 7 30"
-                    }
-                }
+    if (numbers.size >= 2) {
+        setAlarm(numbers[0], numbers[1])
+        "Opening alarm"
+    } else {
+        "Say time like 7 30"
+    }
+}
 
                 // 🗣 NORMAL
                 text.contains("hello") -> "Hello da 😄"
@@ -120,6 +115,26 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             "Something went wrong 😢"
         }
     }
+private fun openAnyApp(appName: String): Boolean {
+    val pm = packageManager
+    val intent = Intent(Intent.ACTION_MAIN, null)
+    intent.addCategory(Intent.CATEGORY_LAUNCHER)
+
+    val apps = pm.queryIntentActivities(intent, 0)
+
+    for (app in apps) {
+        val label = app.loadLabel(pm).toString().lowercase()
+
+        if (label.contains(appName)) {
+            val launchIntent = pm.getLaunchIntentForPackage(app.activityInfo.packageName)
+            if (launchIntent != null) {
+                startActivity(launchIntent)
+                return true
+            }
+        }
+    }
+    return false
+}
 
     // 📱 OPEN APP SAFELY
     private fun openApp(packageName: String) {

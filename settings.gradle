@@ -1,2 +1,3 @@
 rootProject.name = "ThambiApp"
+include ':app'rootProject.name = "ThambiApp"
 include ':app'

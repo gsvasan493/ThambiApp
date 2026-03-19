@@ -68,6 +68,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
             output.append("\nThambi: $reply")
             speak(reply)
+            output.append("\nDEBUG: trying to open app")
         }
     }
 

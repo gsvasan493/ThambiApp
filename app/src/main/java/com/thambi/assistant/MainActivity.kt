@@ -82,9 +82,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         // 🔥 REMOVE WAKE WORD
         val cleanText = spokenText
-            .replace("hey thambi", "")
-            .replace("thambi", "")
-            .trim()
+    .replace("hey thambi", "")
+    .replace("dai thambi", "")
+    .replace("thambi", "")
+    .trim()
 
         output.text = "You: $spokenText\nListening..."
 
@@ -204,11 +205,15 @@ text.contains("call") -> {
     else "Contact not found"
 }
 text.contains("whatsapp") -> {
+
     val words = text.split(" ")
 
     if (!words.contains("to") || words.indexOf("to") == words.size - 1) {
-    return "Say: whatsapp to name message"
-}
+        return "Say: whatsapp to name message"
+    }
+
+    val name = words[words.indexOf("to") + 1]
+
     val message = text.substringAfter(name).trim()
 
     sendWhatsAppToContact(name, message)
@@ -263,6 +268,7 @@ text.contains("whatsapp") -> {
     return false
 }
    private fun getContactNumber(name: String): String? {
+
     val cursor = contentResolver.query(
         android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
         null, null, null, null
@@ -270,6 +276,7 @@ text.contains("whatsapp") -> {
 
     cursor?.use {
         while (it.moveToNext()) {
+
             val contactName = it.getString(
                 it.getColumnIndexOrThrow(
                     android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
@@ -282,25 +289,17 @@ text.contains("whatsapp") -> {
                 )
             )
 
-            val cleanNumber = number.replace(" ", "").replace("+", "")
+            if (contactName.contains(name.lowercase())) {
 
-return if (cleanNumber.startsWith("91")) cleanNumber
-else "91$cleanNumber"
+                val cleanNumber = number.replace(" ", "").replace("+", "")
+
+                return if (cleanNumber.startsWith("91")) cleanNumber
+                else "91$cleanNumber"
+            }
         }
     }
-    return null
-}
-   private fun sendWhatsAppToContact(name: String, message: String) {
-    val number = getContactNumber(name)
 
-    if (number != null) {
-        val url = "https://wa.me/$number?text=${Uri.encode(message)}"
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse(url)
-        startActivity(intent)
-    } else {
-        speak("Contact not found")
-    }
+    return null
 }
 private fun openAnyApp(appName: String): Boolean {
     val pm = packageManager

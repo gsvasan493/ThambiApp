@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
             )
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ta-IN")
+            
             intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
 
             startActivityForResult(intent, REQUEST_CODE_SPEECH)
@@ -116,17 +116,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     "Playing music"
 }
             // Tamil open app
-text.contains("திற") -> {
-    val appName = text.replace("திற", "").trim()
-    openAnyApp(appName)
-    "$appName திறக்கப்படுகிறது"
-}
 
-// Tamil alarm
-text.contains("அலாரம்") -> {
-    setAlarm(6, 0) // basic for now
-    "அலாரம் அமைக்கப்படுகிறது"
-}
 
             // ⏰ SET ALARM
             text.contains("multiple alarms") -> {

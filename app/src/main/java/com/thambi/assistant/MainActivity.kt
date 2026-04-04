@@ -7,6 +7,9 @@ import android.os.Bundle
 import android.provider.AlarmClock
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
+import android.provider.ContactsContract
+import android.net.Uri
+import android.widget.Toast
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -23,7 +26,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
-    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+    != PackageManager.PERMISSION_GRANTED) {
 
     requestPermissions(arrayOf(android.Manifest.permission.READ_CONTACTS), 1)
 }
@@ -367,7 +370,49 @@ private fun openAnyApp(appName: String): Boolean {
         speak("Cannot set alarm")
     }
 }
-  
+  fun sendWhatsAppToContact(name: String, message: String) {
+    val phoneNumber = getPhoneNumberFromName(name)
+
+    if (phoneNumber != null) {
+        val uri = Uri.parse("https://wa.me/$phoneNumber?text=${Uri.encode(message)}")
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        startActivity(intent)
+    } else {
+        Toast.makeText(this, "Contact not found", Toast.LENGTH_SHORT).show()
+    }
+}
+  fun getPhoneNumberFromName(name: String): String? {
+    val resolver = contentResolver
+    val cursor = resolver.query(
+        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+        null,
+        null,
+        null,
+        null
+    )
+
+    if (cursor != null) {
+        while (cursor.moveToNext()) {
+            val contactName = cursor.getString(
+                cursor.getColumnIndexOrThrow(
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                )
+            )
+
+            if (contactName.equals(name, ignoreCase = true)) {
+                val number = cursor.getString(
+                    cursor.getColumnIndexOrThrow(
+                        ContactsContract.CommonDataKinds.Phone.NUMBER
+                    )
+                )
+                cursor.close()
+                return number.replace(" ", "").replace("+", "")
+            }
+        }
+        cursor.close()
+    }
+    return null
+}
   
   private fun playMusic() {
     val intent = Intent(Intent.ACTION_MAIN)

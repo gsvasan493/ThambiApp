@@ -121,9 +121,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     val song = text.replace("play", "").trim()
 
     val intent = Intent(Intent.ACTION_SEARCH).apply {
-        setPackage("com.google.android.youtube")
-        putExtra("query", song)
-    }
+    putExtra("query", song)
+}
+
+if (intent.resolveActivity(packageManager) != null) {
+    startActivity(intent)
+} else {
+    return "No app to play music"
+}
 
     startActivity(intent)
 
@@ -215,6 +220,9 @@ text.contains("whatsapp") -> {
     val name = words[words.indexOf("to") + 1]
 
     val message = text.substringAfter(name).trim()
+    if (message.isEmpty()) {
+    return "What message should I send?"
+}
 
     sendWhatsAppToContact(name, message)
 
@@ -289,8 +297,7 @@ text.contains("whatsapp") -> {
                 )
             )
 
-            if (contactName.contains(name.lowercase()) ||
-                name.lowercase().contains(contactName)) {
+            if (contactName.contains(name.lowercase())) {
 
                 val cleanNumber = number.replace(" ", "").replace("+", "")
 
@@ -361,15 +368,7 @@ private fun openAnyApp(appName: String): Boolean {
     }
 }
   
-  private fun sendWhatsApp(message: String) {
-    try {
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = android.net.Uri.parse("https://wa.me/?text=${Uri.encode(message)}")
-        startActivity(intent)
-    } catch (e: Exception) {
-        speak("WhatsApp not installed")
-    }
-}
+  
   private fun playMusic() {
     val intent = Intent(Intent.ACTION_MAIN)
     intent.addCategory(Intent.CATEGORY_APP_MUSIC)

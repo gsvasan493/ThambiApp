@@ -212,22 +212,15 @@ text.contains("call") -> {
 }
 text.contains("whatsapp") -> {
 
-    val words = text.split(" ")
+    val afterTo = text.substringAfter("to").trim()
+    val parts = afterTo.split(" ", limit = 2)
 
-    if (!words.contains("to") || words.indexOf("to") == words.size - 1) {
+    if (parts.size < 2) {
         return "Say: whatsapp to name message"
     }
 
-    val afterTo = text.substringAfter("to").trim()
-val parts = afterTo.split(" ", limit = 2)
-
-if (parts.size < 2) {
-    return "Say: whatsapp to name message"
-}
-
-val name = parts[0]
-val message = parts[1]
-}
+    val name = parts[0]
+    val message = parts[1]
 
     sendWhatsAppToContact(name, message)
 
@@ -280,40 +273,7 @@ val message = parts[1]
     }
     return false
 }
-  private fun getContactNumber(name: String): String? {
-
-    val cursor = contentResolver.query(
-        android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-        null, null, null, null
-    )
-
-    cursor?.use {
-        while (it.moveToNext()) {
-
-            val contactName = it.getString(
-                it.getColumnIndexOrThrow(
-                    android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
-                )
-            ).lowercase()
-
-            val number = it.getString(
-                it.getColumnIndexOrThrow(
-                    android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER
-                )
-            )
-
-            if (contactName.lowercase().contains(name.lowercase())) {
-
-                val cleanNumber = number.replace(" ", "").replace("+", "")
-
-                return if (cleanNumber.startsWith("91")) cleanNumber
-                else "91$cleanNumber"
-            }
-        }
-    }
-
-    return null
-}
+  
 private fun openAnyApp(appName: String): Boolean {
     val pm = packageManager
     val intent = Intent(Intent.ACTION_MAIN, null)
@@ -383,7 +343,33 @@ private fun openAnyApp(appName: String): Boolean {
         Toast.makeText(this, "Contact not found", Toast.LENGTH_SHORT).show()
     }
 }
-  
+  fun getPhoneNumberFromName(name: String): String? {
+    val cursor = contentResolver.query(
+        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+        null, null, null, null
+    )
+
+    cursor?.use {
+        while (it.moveToNext()) {
+            val contactName = it.getString(
+                it.getColumnIndexOrThrow(
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                )
+            ).lowercase()
+
+            val number = it.getString(
+                it.getColumnIndexOrThrow(
+                    ContactsContract.CommonDataKinds.Phone.NUMBER
+                )
+            )
+
+            if (contactName.contains(name.lowercase())) {
+                return number.replace(" ", "").replace("+", "")
+            }
+        }
+    }
+    return null
+}
   
   private fun playMusic() {
     val intent = Intent(Intent.ACTION_MAIN)

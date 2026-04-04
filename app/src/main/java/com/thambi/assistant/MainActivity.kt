@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         // 🔥 WAKE WORD CHECK
         if (!spokenText.contains("thambi")) {
-            output.text = "Say 'Hey Thambi' first 😄"
+            output.text = "Say 'Dai Thambi' first 😄"
             return
         }
 
@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             .replace("thambi", "")
             .trim()
 
-        output.text = "You: $spokenText"
+        output.text = "You: $spokenText\nListening..."
 
         val reply = handleCommand(cleanText)
 
@@ -116,9 +116,17 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
             
             
-            text.contains("play music") || text.contains("song") -> {
-    playMusic()
-    "Playing music"
+            text.contains("play") -> {
+    val song = text.replace("play", "").trim()
+
+    val intent = Intent(Intent.ACTION_SEARCH).apply {
+        setPackage("com.google.android.youtube")
+        putExtra("query", song)
+    }
+
+    startActivity(intent)
+
+    "Playing $song"
 }
             // Tamil open app
 
@@ -198,9 +206,9 @@ text.contains("call") -> {
 text.contains("whatsapp") -> {
     val words = text.split(" ")
 
-    if (!words.contains("to")) return "Say: whatsapp to name message"
-
-    val name = words[words.indexOf("to") + 1]
+    if (!words.contains("to") || words.indexOf("to") == words.size - 1) {
+    return "Say: whatsapp to name message"
+}
     val message = text.substringAfter(name).trim()
 
     sendWhatsAppToContact(name, message)
@@ -243,7 +251,8 @@ text.contains("whatsapp") -> {
                 )
             )
 
-            if (contactName.contains(name.lowercase())) {
+            if (contactName.contains(name.lowercase()) ||
+    name.lowercase().contains(contactName)) {
                 val intent = Intent(Intent.ACTION_DIAL)
                 intent.data = Uri.parse("tel:$number")
                 startActivity(intent)
@@ -273,9 +282,10 @@ text.contains("whatsapp") -> {
                 )
             )
 
-            if (contactName.contains(name.lowercase())) {
-                return number.replace(" ", "")
-            }
+            val cleanNumber = number.replace(" ", "").replace("+", "")
+
+return if (cleanNumber.startsWith("91")) cleanNumber
+else "91$cleanNumber"
         }
     }
     return null

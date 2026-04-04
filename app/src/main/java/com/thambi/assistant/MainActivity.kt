@@ -95,24 +95,24 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             // ⏰ SET ALARM
             text.contains("alarm") -> {
 
-                val numbers = Regex("\\d+")
-                    .findAll(text)
-                    .map { it.value.toInt() }
-                    .toList()
+    val numbers = Regex("\\d+")
+        .findAll(text)
+        .map { it.value.toInt() }
+        .toList()
 
-                if (numbers.size >= 2) {
-                    var hour = numbers[0]
-                    val minute = numbers[1]
+    if (numbers.size >= 2) {
+        var hour = numbers[0]
+        val minute = numbers[1]
 
-                    if (text.contains("pm") && hour < 12) hour += 12
-                    if (text.contains("am") && hour == 12) hour = 0
+        if (text.contains("pm") && hour < 12) hour += 12
+        if (text.contains("am") && hour == 12) hour = 0
 
-                    setAlarm(hour, minute)
-                    "Setting alarm for $hour:$minute"
-                } else {
-                    "Say time like 7 30 AM or PM"
-                }
-            }
+        setAlarm(hour, minute)
+        "Setting alarm for $hour:$minute"
+    } else {
+        "Say time like 7 30 AM or PM"
+    }
+}
 
             // 🗣 NORMAL
             text.contains("hello") -> "Hello da 😄"

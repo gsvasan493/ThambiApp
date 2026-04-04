@@ -62,6 +62,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
 
             val spokenText = result[0].lowercase().trim()
+            if (spokenText.isEmpty() || spokenText.length < 3) {
+    output.text = "Didn't catch that 😅"
+    return
+}
 
             output.text = "You: $spokenText"
 
@@ -94,16 +98,43 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
 
             // ⏰ SET ALARM
-            text.contains("alarm") || text.contains("wake") -> {
+            text.contains("multiple alarms") -> {
 
-    output.append("\nDEBUG: Alarm command detected")
+    setAlarm(6, 0)
+    setAlarm(7, 0)
+    setAlarm(8, 0)
 
+    "Setting multiple alarms for 6, 7, and 8 AM"
+}
+
+  (text.contains("set") && text.contains("alarm")) || text.contains("wake") -> {
+
+    // ⏳ AFTER MINUTES (e.g., "after 10 minutes")
+    if (text.contains("after") && text.contains("minute")) {
+
+        val minutes = Regex("\\d+").find(text)?.value?.toIntOrNull()
+
+        if (minutes != null) {
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.MINUTE, minutes)
+
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            val minute = calendar.get(Calendar.MINUTE)
+
+            setAlarm(hour, minute)
+
+            return "Setting alarm after $minutes minutes"
+        } else {
+            return "Tell how many minutes"
+        }
+    }
+
+    // 🕒 NORMAL TIME (6 AM, 7:30 PM)
     val regex = Regex("(\\d{1,2})(:?)(\\d{0,2})\\s?(am|pm)?")
     val match = regex.find(text)
 
     if (match != null) {
 
-        output.append("\nDEBUG: Match found")
         var hour = match.groupValues[1].toInt()
 
         val minute = if (match.groupValues[3].isNotEmpty()) {
@@ -112,7 +143,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val amPm = match.groupValues[4]
 
-        // Convert to 24-hour format
         if (amPm == "pm" && hour < 12) hour += 12
         if (amPm == "am" && hour == 12) hour = 0
 
@@ -123,7 +153,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         "Tell time clearly like 6 AM or 7:30 PM"
     }
 }
+text.contains("cancel alarm") -> {
 
+    val intent = Intent(AlarmClock.ACTION_SHOW_ALARMS)
+    startActivity(intent)
+
+    "Opening alarms. Please turn it off"
+}
             // 🗣 NORMAL
             text.contains("hello") -> "Hello da 😄"
             text.contains("time") -> Date().toString()

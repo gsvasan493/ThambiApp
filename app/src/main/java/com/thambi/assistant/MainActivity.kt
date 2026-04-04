@@ -12,6 +12,10 @@ import android.widget.Toast
 import android.widget.Button
 import android.widget.TextView
 import android.content.pm.PackageManager
+import android.speech.SpeechRecognizer
+import android.speech.RecognitionListener
+import android.os.Handler
+import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import java.util.*
 
@@ -19,83 +23,84 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var output: TextView
     private lateinit var tts: TextToSpeech
+    private lateinit var speechRecognizer: SpeechRecognizer
+private lateinit var speechIntent: Intent
 
     private val REQUEST_CODE_SPEECH = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+
+speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+    putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+}
+speechRecognizer.setRecognitionListener(object : RecognitionListener {
+
+    override fun onResults(results: Bundle?) {
+        val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+
+        if (!matches.isNullOrEmpty()) {
+            val spokenText = matches[0].lowercase()
+            output.text = "Heard: $spokenText"
+
+            if (spokenText.contains("thambi")) {
+                val cleanText = spokenText.substringAfter("thambi").trim()
+
+                val reply = handleCommand(cleanText)
+                output.append("\nThambi: $reply")
+                speak(reply)
+            }
+        }
+
+        restartListening()
+    }
+
+    override fun onError(error: Int) {
+        restartListening()
+    }
+
+    override fun onReadyForSpeech(params: Bundle?) {}
+    override fun onBeginningOfSpeech() {}
+    override fun onRmsChanged(rmsdB: Float) {}
+    override fun onBufferReceived(buffer: ByteArray?) {}
+    override fun onEndOfSpeech() {}
+    override fun onPartialResults(partialResults: Bundle?) {}
+    override fun onEvent(eventType: Int, params: Bundle?) {}
+})
         if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
     != PackageManager.PERMISSION_GRANTED) {
 
     requestPermissions(arrayOf(android.Manifest.permission.READ_CONTACTS), 1)
 }
-
-        val micButton = findViewById<Button>(R.id.micButton)
+startListening()
+        
         output = findViewById(R.id.outputText)
 
         tts = TextToSpeech(this, this)
 
-        micButton.setOnClickListener {
-    startVoiceInput()
-}
+       
     }
-
-    private fun startVoiceInput() {
+private fun restartListening() {
+    Handler(Looper.getMainLooper()).postDelayed({
         try {
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            intent.putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-            
-            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
-
-            startActivityForResult(intent, REQUEST_CODE_SPEECH)
+            speechRecognizer.stopListening()
+            speechRecognizer.startListening(speechIntent)
         } catch (e: Exception) {
-            output.text = "Voice not supported 😢"
+            e.printStackTrace()
         }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    super.onActivityResult(requestCode, resultCode, data)
-
-    if (requestCode == REQUEST_CODE_SPEECH && resultCode == Activity.RESULT_OK) {
-
-        val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-
-        if (result.isNullOrEmpty()) {
-            output.text = "Didn't catch that 😅"
-            return
-        }
-
-        val spokenText = result[0].lowercase().trim()
-
-        if (spokenText.length < 3) {
-            output.text = "Didn't catch that 😅"
-            return
-        }
-
-        // 🔥 WAKE WORD CHECK
-        if (!spokenText.contains("thambi")) { 
-            output.text = "Say 'Dai Thambi' first 😄"
-            return
-        }
-
-        // 🔥 REMOVE WAKE WORD
-      val cleanText = spokenText
-    .substringAfter("thambi", "")
-    .trim()
-
-        output.text = "You: $spokenText"
-
-        val reply = handleCommand(cleanText)
-
-        output.append("\nThambi: $reply")
-        speak(reply)
-    }
+    }, 500)
 }
+private fun startListening() {
+    speechRecognizer.startListening(speechIntent)
+}
+Handler(Looper.getMainLooper()).postDelayed({
+    startListening()
+}, 500)
+   
 
     // 🔥 MAIN COMMAND HANDLER
    private fun handleCommand(text: String): String {

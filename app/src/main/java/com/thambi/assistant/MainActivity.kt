@@ -95,6 +95,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             // ⏰ SET ALARM
             text.contains("alarm") || text.contains("wake") -> {
 
+    output.append("\nDEBUG: Alarm command detected")
+
     val regex = Regex("(\\d{1,2})(:?)(\\d{0,2})\\s?(am|pm)?")
     val match = regex.find(text)
 

@@ -78,7 +78,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         // 🔥 WAKE WORD CHECK
-        if (!spokenText.contains("thambi")) {
+        if (!spokenText.startsWith("hey thambi") && 
+    !spokenText.startsWith("dai thambi") &&
+    !spokenText.startsWith("thambi")) {
             output.text = "Say 'Dai Thambi' first 😄"
             return
         }
@@ -216,11 +218,15 @@ text.contains("whatsapp") -> {
         return "Say: whatsapp to name message"
     }
 
-    val name = words[words.indexOf("to") + 1]
+    val afterTo = text.substringAfter("to").trim()
+val parts = afterTo.split(" ", limit = 2)
 
-    val message = text.substringAfter(name).trim()
-    if (message.isEmpty()) {
-    return "What message should I send?"
+if (parts.size < 2) {
+    return "Say: whatsapp to name message"
+}
+
+val name = parts[0]
+val message = parts[1]
 }
 
     sendWhatsAppToContact(name, message)
@@ -377,38 +383,7 @@ private fun openAnyApp(appName: String): Boolean {
         Toast.makeText(this, "Contact not found", Toast.LENGTH_SHORT).show()
     }
 }
-  fun getPhoneNumberFromName(name: String): String? {
-    val resolver = contentResolver
-    val cursor = resolver.query(
-        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-        null,
-        null,
-        null,
-        null
-    )
-
-    if (cursor != null) {
-        while (cursor.moveToNext()) {
-            val contactName = cursor.getString(
-                cursor.getColumnIndexOrThrow(
-                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
-                )
-            )
-
-            if (contactName.equals(name, ignoreCase = true)) {
-                val number = cursor.getString(
-                    cursor.getColumnIndexOrThrow(
-                        ContactsContract.CommonDataKinds.Phone.NUMBER
-                    )
-                )
-                cursor.close()
-                return number.replace(" ", "").replace("+", "")
-            }
-        }
-        cursor.close()
-    }
-    return null
-}
+  
   
   private fun playMusic() {
     val intent = Intent(Intent.ACTION_MAIN)

@@ -40,32 +40,35 @@ speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
     putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
 putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-IN")
 putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "en-IN")
+putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
 }
 speechRecognizer.setRecognitionListener(object : RecognitionListener {
 
     override fun onResults(results: Bundle?) {
-        val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
-        if (!matches.isNullOrEmpty()) {
-            val spokenText = matches[0].lowercase()
-            output.text = "Heard: $spokenText"
+    if (!matches.isNullOrEmpty()) {
+        val spokenText = matches[0].lowercase()
+        output.text = "Heard: $spokenText"
 
-            if (spokenText.contains("thambi") || 
-    spokenText.contains("tambi") || 
-    spokenText.contains("tamby")) {
-               val cleanText = spokenText
-    .replace("thambi", "")
-    .replace("tambi", "")
+        if (spokenText.contains("thambi") || 
+            spokenText.contains("tambi") || 
+            spokenText.contains("tamby")) {
+
+            val cleanText = spokenText
+    .substringAfter("thambi", spokenText)
+    .substringAfter("tambi", spokenText)
     .trim()
 
-val reply = handleCommand(cleanText)
-                output.append("\nThambi: $reply")
-                speak(reply)
-            }
+            val reply = handleCommand(cleanText)
+            output.append("\nThambi: $reply")
+            speak(reply)
         }
-
-        restartListening()
     }
+
+   
+}
 
     override fun onError(error: Int) {
     when (error) {
@@ -87,8 +90,17 @@ val reply = handleCommand(cleanText)
     override fun onBeginningOfSpeech() {}
     override fun onRmsChanged(rmsdB: Float) {}
     override fun onBufferReceived(buffer: ByteArray?) {}
-    override fun onEndOfSpeech() {}
-    override fun onPartialResults(partialResults: Bundle?) {}
+    override fun onEndOfSpeech() {
+    restartListening()
+}
+    override fun onPartialResults(partialResults: Bundle?) {
+    val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+
+    if (!matches.isNullOrEmpty()) {
+        val text = matches[0].lowercase()
+        output.text = "Listening: $text"
+    }
+}
     override fun onEvent(eventType: Int, params: Bundle?) {}
 })
         if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
@@ -108,15 +120,23 @@ if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
 restartListening()
        
     }
+private var isListening = false
+
 private fun restartListening() {
+    if (isListening) return
+
+    isListening = true
+
     Handler(Looper.getMainLooper()).postDelayed({
         try {
-            speechRecognizer.stopListening()
+            speechRecognizer.cancel() // 🔥 important
             speechRecognizer.startListening(speechIntent)
         } catch (e: Exception) {
             e.printStackTrace()
+        } finally {
+            isListening = false
         }
-    }, 500)
+    }, 2000) // 🔥 better delay
 }
 
 

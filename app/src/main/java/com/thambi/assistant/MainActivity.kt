@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
             )
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ta-IN")
             intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
 
             startActivityForResult(intent, REQUEST_CODE_SPEECH)
@@ -95,6 +96,36 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     "App not found"
                 }
             }
+            text.contains("call") -> {
+    val person = text.replace("call", "").trim()
+    makeCall(person)
+    "Calling $person"
+}
+            text.contains("whatsapp") || text.contains("message") -> {
+    val msg = text.replace("send", "")
+        .replace("whatsapp", "")
+        .replace("message", "")
+        .trim()
+
+    sendWhatsApp(msg)
+    "Sending message"
+}
+            text.contains("play music") || text.contains("song") -> {
+    playMusic()
+    "Playing music"
+}
+            // Tamil open app
+text.contains("திற") -> {
+    val appName = text.replace("திற", "").trim()
+    openAnyApp(appName)
+    "$appName திறக்கப்படுகிறது"
+}
+
+// Tamil alarm
+text.contains("அலாரம்") -> {
+    setAlarm(6, 0) // basic for now
+    "அலாரம் அமைக்கப்படுகிறது"
+}
 
             // ⏰ SET ALARM
             text.contains("multiple alarms") -> {
@@ -228,6 +259,44 @@ private fun openAnyApp(appName: String): Boolean {
     } catch (e: Exception) {
         output.append("\nERROR: ${e.message}")
         speak("Cannot set alarm")
+    }
+}
+  private fun makeCall(name: String): Boolean {
+    val pm = packageManager
+    val intent = Intent(Intent.ACTION_MAIN, null)
+    intent.addCategory(Intent.CATEGORY_LAUNCHER)
+
+    val apps = pm.queryIntentActivities(intent, 0)
+
+    for (app in apps) {
+        val label = app.loadLabel(pm).toString().lowercase()
+
+        if (label.contains("phone") || label.contains("dialer")) {
+            val dialIntent = Intent(Intent.ACTION_DIAL)
+            dialIntent.data = android.net.Uri.parse("tel:$name") // temporary
+            startActivity(dialIntent)
+            return true
+        }
+    }
+    return false
+}
+  private fun sendWhatsApp(message: String) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.data = android.net.Uri.parse("https://wa.me/?text=${Uri.encode(message)}")
+        startActivity(intent)
+    } catch (e: Exception) {
+        speak("WhatsApp not installed")
+    }
+}
+  private fun playMusic() {
+    val intent = Intent(Intent.ACTION_MAIN)
+    intent.addCategory(Intent.CATEGORY_APP_MUSIC)
+
+    if (intent.resolveActivity(packageManager) != null) {
+        startActivity(intent)
+    } else {
+        speak("No music app found")
     }
 }
 

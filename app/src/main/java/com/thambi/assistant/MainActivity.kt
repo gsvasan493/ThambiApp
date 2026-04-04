@@ -8,10 +8,10 @@ import android.provider.AlarmClock
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.provider.ContactsContract
-import android.net.Uri
 import android.widget.Toast
 import android.widget.Button
 import android.widget.TextView
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import java.util.*
 
@@ -120,17 +120,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
             
             
-            text.contains("play") -> {
+           text.contains("play") -> {
     val song = text.replace("play", "").trim()
 
-    val intent = Intent(Intent.ACTION_SEARCH).apply {
-    putExtra("query", song)
-}
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        data = Uri.parse("https://www.youtube.com/results?search_query=$song")
+    }
 
-if (intent.resolveActivity(packageManager) != null) {
     startActivity(intent)
-} else {
-    return "No app to play music"
+
+    "Playing $song"
 }
 
     startActivity(intent)
@@ -300,7 +299,7 @@ text.contains("whatsapp") -> {
                 )
             )
 
-            if (contactName.contains(name.lowercase())) {
+            if (contactName.lowercase().contains(name.lowercase())) {
 
                 val cleanNumber = number.replace(" ", "").replace("+", "")
 

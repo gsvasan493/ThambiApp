@@ -78,18 +78,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         // 🔥 WAKE WORD CHECK
-        if (!spokenText.startsWith("hey thambi") && 
-    !spokenText.startsWith("dai thambi") &&
-    !spokenText.startsWith("thambi")) {
+        if (!spokenText.contains("thambi")) { 
             output.text = "Say 'Dai Thambi' first 😄"
             return
         }
 
         // 🔥 REMOVE WAKE WORD
-       val cleanText = spokenText
-    .replace("hey thambi", "")
-    .replace("dai thambi", "")
-    .replace("thambi", "")
+      val cleanText = spokenText
+    .substringAfter("thambi", "")
     .trim()
 
         output.text = "You: $spokenText"

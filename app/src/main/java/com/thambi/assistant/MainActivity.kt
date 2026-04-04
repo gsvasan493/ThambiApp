@@ -92,7 +92,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     .replace("thambi", "")
     .trim()
 
-        output.text = "You: $spokenText\nListening..."
+        output.text = "You: $spokenText"
 
         val reply = handleCommand(cleanText)
 
@@ -213,14 +213,12 @@ text.contains("call") -> {
 text.contains("whatsapp") -> {
 
     val afterTo = text.substringAfter("to").trim()
-    val parts = afterTo.split(" ", limit = 2)
+    val words = afterTo.split(" ")
+if (words.size < 2) return "Say: whatsapp to name message"
 
-    if (parts.size < 2) {
-        return "Say: whatsapp to name message"
-    }
-
-    val name = parts[0]
-    val message = parts[1]
+// Assume last words = message, first words = name
+val name = words.take(words.size - 1).joinToString(" ")
+val message = words.last()
 
     sendWhatsAppToContact(name, message)
 
@@ -363,7 +361,8 @@ private fun openAnyApp(appName: String): Boolean {
                 )
             )
 
-            if (contactName.contains(name.lowercase())) {
+            if (contactName.contains(name.lowercase()) ||
+    name.lowercase().contains(contactName)) {
                 return number.replace(" ", "").replace("+", "")
             }
         }

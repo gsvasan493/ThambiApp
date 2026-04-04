@@ -31,12 +31,15 @@ private lateinit var speechIntent: Intent
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        output = findViewById(R.id.outputText)
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
 
 speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
         RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-    putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
+putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-IN")
+putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "en-IN")
 }
 speechRecognizer.setRecognitionListener(object : RecognitionListener {
 
@@ -47,10 +50,15 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
             val spokenText = matches[0].lowercase()
             output.text = "Heard: $spokenText"
 
-            if (spokenText.contains("thambi")) {
-                val cleanText = spokenText.substringAfter("thambi").trim()
+            if (spokenText.contains("thambi") || 
+    spokenText.contains("tambi") || 
+    spokenText.contains("tamby")) {
+               val cleanText = spokenText
+    .replace("thambi", "")
+    .replace("tambi", "")
+    .trim()
 
-                val reply = handleCommand(cleanText)
+val reply = handleCommand(cleanText)
                 output.append("\nThambi: $reply")
                 speak(reply)
             }
@@ -60,8 +68,20 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
     }
 
     override fun onError(error: Int) {
-        restartListening()
+    when (error) {
+        SpeechRecognizer.ERROR_NO_MATCH,
+        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+            // normal, restart
+            restartListening()
+        }
+        else -> {
+            // delay restart for serious errors
+            Handler(Looper.getMainLooper()).postDelayed({
+                restartListening()
+            }, 1000)
+        }
     }
+}
 
     override fun onReadyForSpeech(params: Bundle?) {}
     override fun onBeginningOfSpeech() {}
@@ -76,12 +96,16 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
 
     requestPermissions(arrayOf(android.Manifest.permission.READ_CONTACTS), 1)
 }
-startListening()
+if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
+    != PackageManager.PERMISSION_GRANTED) {
+
+    requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 2)
+}
         
-        output = findViewById(R.id.outputText)
+        
 
         tts = TextToSpeech(this, this)
-
+restartListening()
        
     }
 private fun restartListening() {
@@ -94,12 +118,8 @@ private fun restartListening() {
         }
     }, 500)
 }
-private fun startListening() {
-    speechRecognizer.startListening(speechIntent)
-}
-Handler(Looper.getMainLooper()).postDelayed({
-    startListening()
-}, 500)
+
+
    
 
     // 🔥 MAIN COMMAND HANDLER
@@ -396,7 +416,15 @@ private fun openAnyApp(appName: String): Boolean {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        tts.shutdown()
+    super.onDestroy()
+
+    try {
+        speechRecognizer.stopListening()
+        speechRecognizer.destroy()
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
+
+    tts.shutdown()
+}
 }

@@ -22,6 +22,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
+    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+
+    requestPermissions(arrayOf(android.Manifest.permission.READ_CONTACTS), 1)
+}
 
         val micButton = findViewById<Button>(R.id.micButton)
         output = findViewById(R.id.outputText)
@@ -52,7 +57,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
+        if (!spokenText.contains("thambi")) {
+    output.text = "Say 'Dai Thambi' first 😄"
+    return
+}
+val cleanText = spokenText
+    .replace("hey thambi", "")
+    .replace("thambi", "")
+    .trim()
+    val reply = handleCommand(cleanText)
         if (requestCode == REQUEST_CODE_SPEECH && resultCode == Activity.RESULT_OK) {
 
             val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
@@ -182,6 +195,24 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         "Tell time clearly like 6 AM or 7:30 PM"
     }
 }
+text.contains("call") -> {
+    val name = text.replace("call", "").trim()
+
+    val success = callContact(name)
+
+    if (success) "Calling $name"
+    else "Contact not found"
+}
+text.contains("whatsapp") -> {
+    val words = text.split(" ")
+
+    val name = words[words.indexOf("to") + 1]
+    val message = text.substringAfter(name).trim()
+
+    sendWhatsAppToContact(name, message)
+
+    "Sending message to $name"
+}
 
             // 🗣 NORMAL
             text.contains("hello") -> "Hello da 😄"
@@ -192,6 +223,79 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     } catch (e: Exception) {
         "Something went wrong 😢"
+    }
+}
+   private fun callContact(name: String): Boolean {
+    val resolver = contentResolver
+    val cursor = resolver.query(
+        android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+        null,
+        null,
+        null,
+        null
+    )
+
+    cursor?.use {
+        while (it.moveToNext()) {
+            val contactName = it.getString(
+                it.getColumnIndexOrThrow(
+                    android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                )
+            ).lowercase()
+
+            val number = it.getString(
+                it.getColumnIndexOrThrow(
+                    android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER
+                )
+            )
+
+            if (contactName.contains(name.lowercase())) {
+                val intent = Intent(Intent.ACTION_DIAL)
+                intent.data = Uri.parse("tel:$number")
+                startActivity(intent)
+                return true
+            }
+        }
+    }
+    return false
+}
+   private fun getContactNumber(name: String): String? {
+    val cursor = contentResolver.query(
+        android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+        null, null, null, null
+    )
+
+    cursor?.use {
+        while (it.moveToNext()) {
+            val contactName = it.getString(
+                it.getColumnIndexOrThrow(
+                    android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+                )
+            ).lowercase()
+
+            val number = it.getString(
+                it.getColumnIndexOrThrow(
+                    android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER
+                )
+            )
+
+            if (contactName.contains(name.lowercase())) {
+                return number.replace(" ", "")
+            }
+        }
+    }
+    return null
+}
+   private fun sendWhatsAppToContact(name: String, message: String) {
+    val number = getContactNumber(name)
+
+    if (number != null) {
+        val url = "https://wa.me/$number?text=${Uri.encode(message)}"
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.data = Uri.parse(url)
+        startActivity(intent)
+    } else {
+        speak("Contact not found")
     }
 }
 private fun openAnyApp(appName: String): Boolean {

@@ -56,40 +56,44 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (!spokenText.contains("thambi")) {
-    output.text = "Say 'Dai Thambi' first 😄"
-    return
-}
-val cleanText = spokenText
-    .replace("hey thambi", "")
-    .replace("thambi", "")
-    .trim()
-    val reply = handleCommand(cleanText)
-        if (requestCode == REQUEST_CODE_SPEECH && resultCode == Activity.RESULT_OK) {
+    super.onActivityResult(requestCode, resultCode, data)
 
-            val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+    if (requestCode == REQUEST_CODE_SPEECH && resultCode == Activity.RESULT_OK) {
 
-            if (result == null || result.isEmpty()) {
-                output.text = "Didn't catch that 😅"
-                return
-            }
+        val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
 
-            val spokenText = result[0].lowercase().trim()
-            if (spokenText.isEmpty() || spokenText.length < 3) {
-    output.text = "Didn't catch that 😅"
-    return
-}
-
-            output.text = "You: $spokenText"
-
-            val reply = handleCommand(spokenText)
-
-            output.append("\nThambi: $reply")
-            speak(reply)
-            output.append("\nDEBUG: trying to open app")
+        if (result.isNullOrEmpty()) {
+            output.text = "Didn't catch that 😅"
+            return
         }
+
+        val spokenText = result[0].lowercase().trim()
+
+        if (spokenText.length < 3) {
+            output.text = "Didn't catch that 😅"
+            return
+        }
+
+        // 🔥 WAKE WORD CHECK
+        if (!spokenText.contains("thambi")) {
+            output.text = "Say 'Hey Thambi' first 😄"
+            return
+        }
+
+        // 🔥 REMOVE WAKE WORD
+        val cleanText = spokenText
+            .replace("hey thambi", "")
+            .replace("thambi", "")
+            .trim()
+
+        output.text = "You: $spokenText"
+
+        val reply = handleCommand(cleanText)
+
+        output.append("\nThambi: $reply")
+        speak(reply)
     }
+}
 
     // 🔥 MAIN COMMAND HANDLER
    private fun handleCommand(text: String): String {
@@ -110,20 +114,8 @@ val cleanText = spokenText
                     "App not found"
                 }
             }
-            text.contains("call") -> {
-    val person = text.replace("call", "").trim()
-    makeCall(person)
-    "Calling $person"
-}
-            text.contains("whatsapp") || text.contains("message") -> {
-    val msg = text.replace("send", "")
-        .replace("whatsapp", "")
-        .replace("message", "")
-        .trim()
-
-    sendWhatsApp(msg)
-    "Sending message"
-}
+            
+            
             text.contains("play music") || text.contains("song") -> {
     playMusic()
     "Playing music"
@@ -205,6 +197,8 @@ text.contains("call") -> {
 }
 text.contains("whatsapp") -> {
     val words = text.split(" ")
+
+    if (!words.contains("to")) return "Say: whatsapp to name message"
 
     val name = words[words.indexOf("to") + 1]
     val message = text.substringAfter(name).trim()
@@ -356,25 +350,7 @@ private fun openAnyApp(appName: String): Boolean {
         speak("Cannot set alarm")
     }
 }
-  private fun makeCall(name: String): Boolean {
-    val pm = packageManager
-    val intent = Intent(Intent.ACTION_MAIN, null)
-    intent.addCategory(Intent.CATEGORY_LAUNCHER)
-
-    val apps = pm.queryIntentActivities(intent, 0)
-
-    for (app in apps) {
-        val label = app.loadLabel(pm).toString().lowercase()
-
-        if (label.contains("phone") || label.contains("dialer")) {
-            val dialIntent = Intent(Intent.ACTION_DIAL)
-            dialIntent.data = android.net.Uri.parse("tel:$name") // temporary
-            startActivity(dialIntent)
-            return true
-        }
-    }
-    return false
-}
+  
   private fun sendWhatsApp(message: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW)

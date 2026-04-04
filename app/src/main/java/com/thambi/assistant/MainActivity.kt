@@ -93,24 +93,30 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
 
             // ⏰ SET ALARM
-            text.contains("alarm") -> {
+            text.contains("alarm") || text.contains("wake") -> {
 
-    val numbers = Regex("\\d+")
-        .findAll(text)
-        .map { it.value.toInt() }
-        .toList()
+    val regex = Regex("(\\d{1,2})(:?)(\\d{0,2})\\s?(am|pm)?")
+    val match = regex.find(text)
 
-    if (numbers.size >= 2) {
-        var hour = numbers[0]
-        val minute = numbers[1]
+    if (match != null) {
 
-        if (text.contains("pm") && hour < 12) hour += 12
-        if (text.contains("am") && hour == 12) hour = 0
+        var hour = match.groupValues[1].toInt()
+
+        val minute = if (match.groupValues[3].isNotEmpty()) {
+            match.groupValues[3].toInt()
+        } else 0
+
+        val amPm = match.groupValues[4]
+
+        // Convert to 24-hour format
+        if (amPm == "pm" && hour < 12) hour += 12
+        if (amPm == "am" && hour == 12) hour = 0
 
         setAlarm(hour, minute)
-        "Setting alarm for $hour:$minute"
+
+        "Setting alarm for $hour:${minute.toString().padStart(2, '0')}"
     } else {
-        "Say time like 7 30 AM or PM"
+        "Tell time clearly like 6 AM or 7:30 PM"
     }
 }
 
@@ -167,7 +173,7 @@ private fun openAnyApp(appName: String): Boolean {
             putExtra(AlarmClock.EXTRA_HOUR, hour)
             putExtra(AlarmClock.EXTRA_MINUTES, minute)
             putExtra(AlarmClock.EXTRA_MESSAGE, "Thambi Alarm")
-            putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+            putExtra(AlarmClock.EXTRA_SKIP_UI, true)
         }
 
         startActivity(intent)

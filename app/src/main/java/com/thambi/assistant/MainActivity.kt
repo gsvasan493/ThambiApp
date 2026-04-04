@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         // 🔥 REMOVE WAKE WORD
-        val cleanText = spokenText
+       val cleanText = spokenText
     .replace("hey thambi", "")
     .replace("dai thambi", "")
     .replace("thambi", "")
@@ -267,7 +267,7 @@ text.contains("whatsapp") -> {
     }
     return false
 }
-   private fun getContactNumber(name: String): String? {
+  private fun getContactNumber(name: String): String? {
 
     val cursor = contentResolver.query(
         android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
@@ -289,7 +289,8 @@ text.contains("whatsapp") -> {
                 )
             )
 
-            if (contactName.contains(name.lowercase())) {
+            if (contactName.contains(name.lowercase()) ||
+                name.lowercase().contains(contactName)) {
 
                 val cleanNumber = number.replace(" ", "").replace("+", "")
 

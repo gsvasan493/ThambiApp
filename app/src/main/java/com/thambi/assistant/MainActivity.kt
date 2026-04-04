@@ -132,10 +132,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     "Playing $song"
 }
 
-    startActivity(intent)
-
-    "Playing $song"
-}
+   
             // Tamil open app
 
 

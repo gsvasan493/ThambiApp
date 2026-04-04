@@ -28,7 +28,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(this, this)
 
         micButton.setOnClickListener {
-            startVoiceInput()
+           setAlarm(6, 0)
+    true
         }
     }
 
@@ -102,6 +103,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     if (match != null) {
 
+        output.append("\nDEBUG: Match found")
         var hour = match.groupValues[1].toInt()
 
         val minute = if (match.groupValues[3].isNotEmpty()) {
@@ -171,16 +173,23 @@ private fun openAnyApp(appName: String): Boolean {
     // ⏰ SET ALARM SAFELY
   private fun setAlarm(hour: Int, minute: Int) {
     try {
+
+        output.append("\nDEBUG: Setting alarm $hour:$minute")
+
         val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
             putExtra(AlarmClock.EXTRA_HOUR, hour)
             putExtra(AlarmClock.EXTRA_MINUTES, minute)
             putExtra(AlarmClock.EXTRA_MESSAGE, "Thambi Alarm")
-            putExtra(AlarmClock.EXTRA_SKIP_UI, true)
         }
 
-        startActivity(intent)
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+        } else {
+            speak("No alarm app found")
+        }
 
     } catch (e: Exception) {
+        output.append("\nERROR: ${e.message}")
         speak("Cannot set alarm")
     }
 }

@@ -28,9 +28,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(this, this)
 
         micButton.setOnClickListener {
-           setAlarm(6, 0)
-    true
-        }
+    startVoiceInput()
+}
     }
 
     private fun startVoiceInput() {
@@ -106,8 +105,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     "Setting multiple alarms for 6, 7, and 8 AM"
 }
+            text.contains("cancel alarm") -> {
 
-  (text.contains("set") && text.contains("alarm")) || text.contains("wake") -> {
+    val intent = Intent(AlarmClock.ACTION_SHOW_ALARMS)
+    startActivity(intent)
+
+    "Opening alarms. Please turn it off"
+}
+
+  (text.contains("set") && text.contains("alarm")) ||
+(text.contains("wake") && text.contains("at")) -> {
 
     // ⏳ AFTER MINUTES (e.g., "after 10 minutes")
     if (text.contains("after") && text.contains("minute")) {
@@ -153,13 +160,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         "Tell time clearly like 6 AM or 7:30 PM"
     }
 }
-text.contains("cancel alarm") -> {
 
-    val intent = Intent(AlarmClock.ACTION_SHOW_ALARMS)
-    startActivity(intent)
-
-    "Opening alarms. Please turn it off"
-}
             // 🗣 NORMAL
             text.contains("hello") -> "Hello da 😄"
             text.contains("time") -> Date().toString()

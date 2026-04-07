@@ -113,20 +113,48 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
     requestPermissions(arrayOf(android.Manifest.permission.READ_CONTACTS), 1)
 }
 if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
-    == PackageManager.PERMISSION_GRANTED) {
+    != PackageManager.PERMISSION_GRANTED) {
 
-    speechRecognizer.startListening(speechIntent)
-
-} else {
-    requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 2)
+    requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 100)
+    return
 }
         
         
 
         tts = TextToSpeech(this, this)
-restartListening()
+
+if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
+    == PackageManager.PERMISSION_GRANTED) {
+
+    startListeningProperly()
+}
        
     }
+    override fun onRequestPermissionsResult(
+    requestCode: Int,
+    permissions: Array<out String>,
+    grantResults: IntArray
+) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+    if (requestCode == 100 && grantResults.isNotEmpty()
+        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+        startListeningProperly()
+    } else {
+        output.text = "Microphone permission denied ❌"
+    }
+}
+    private fun startListeningProperly() {
+    Handler(Looper.getMainLooper()).postDelayed({
+        try {
+            output.text = "🎤 Starting..."
+            speechRecognizer.startListening(speechIntent)
+        } catch (e: Exception) {
+            output.text = "Start failed: ${e.message}"
+        }
+    }, 1000)
+}
      private fun startCommandListening() {
     Handler(Looper.getMainLooper()).postDelayed({
         try {
@@ -142,11 +170,12 @@ restartListening()
 private fun restartListening() {
     Handler(Looper.getMainLooper()).postDelayed({
         try {
-            speechRecognizer.stopListening()
+            speechRecognizer.cancel()
+            speechRecognizer.startListening(speechIntent)
         } catch (e: Exception) {
-            e.printStackTrace()
+            output.text = "Restart failed: ${e.message}"
         }
-    }, if (isWakeMode) 500 else 1500)
+    }, if (isWakeMode) 800 else 1500)
 }
 
 

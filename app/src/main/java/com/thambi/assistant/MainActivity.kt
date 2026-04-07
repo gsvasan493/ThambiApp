@@ -78,16 +78,7 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
         }
     }
 }
-    private fun startCommandListening() {
-    Handler(Looper.getMainLooper()).postDelayed({
-        try {
-            speechRecognizer.stopListening()
-            speechRecognizer.startListening(speechIntent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }, 500)
-}
+   
 
     override fun onError(error: Int) {
     when (error) {
@@ -139,13 +130,22 @@ if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
 restartListening()
        
     }
-private var isListening = false
+     private fun startCommandListening() {
+    Handler(Looper.getMainLooper()).postDelayed({
+        try {
+            speechRecognizer.stopListening()
+            speechRecognizer.startListening(speechIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }, 500)
+}
+
 
 private fun restartListening() {
     Handler(Looper.getMainLooper()).postDelayed({
         try {
-            speechRecognizer.cancel()
-            speechRecognizer.startListening(speechIntent)
+            speechRecognizer.stopListening()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -267,12 +267,12 @@ text.contains("call") -> {
 text.contains("whatsapp") -> {
 
     val afterTo = text.substringAfter("to").trim()
-    val words = afterTo.split(" ")
-if (words.size < 2) return "Say: whatsapp to name message"
+   val parts = afterTo.split(" message ")
 
-// Assume last words = message, first words = name
-val name = words.take(words.size - 1).joinToString(" ")
-val message = words.last()
+if (parts.size < 2) return "Say: whatsapp to name message your text"
+
+val name = parts[0].trim()
+val message = parts[1].trim()
 
     sendWhatsAppToContact(name, message)
 
@@ -336,7 +336,9 @@ private fun openAnyApp(appName: String): Boolean {
     for (app in apps) {
         val label = app.loadLabel(pm).toString().lowercase()
 
-        if (label.contains(appName)) {
+        if (label.contains(appName.lowercase()) ||
+            appName.lowercase().contains(label)) {
+
             val launchIntent = pm.getLaunchIntentForPackage(app.activityInfo.packageName)
             if (launchIntent != null) {
                 startActivity(launchIntent)

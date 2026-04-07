@@ -81,22 +81,16 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
    
 
     override fun onError(error: Int) {
-    when (error) {
-        SpeechRecognizer.ERROR_NO_MATCH,
-        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
-            // normal, restart
-            restartListening()
-        }
-        else -> {
-            // delay restart for serious errors
-            Handler(Looper.getMainLooper()).postDelayed({
-                restartListening()
-            }, 1000)
-        }
-    }
+    output.text = "Error code: $error"
+
+    Handler(Looper.getMainLooper()).postDelayed({
+        restartListening()
+    }, 1000)
 }
 
-    override fun onReadyForSpeech(params: Bundle?) {}
+    override fun onReadyForSpeech(params: Bundle?) {
+    output.text = "🎤 Listening..."
+}
     override fun onBeginningOfSpeech() {}
     override fun onRmsChanged(rmsdB: Float) {}
     override fun onBufferReceived(buffer: ByteArray?) {}
@@ -119,8 +113,11 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
     requestPermissions(arrayOf(android.Manifest.permission.READ_CONTACTS), 1)
 }
 if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
-    != PackageManager.PERMISSION_GRANTED) {
+    == PackageManager.PERMISSION_GRANTED) {
 
+    speechRecognizer.startListening(speechIntent)
+
+} else {
     requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 2)
 }
         

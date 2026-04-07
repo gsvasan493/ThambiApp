@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var tts: TextToSpeech
     private lateinit var speechRecognizer: SpeechRecognizer
 private lateinit var speechIntent: Intent
+    private var isWakeMode = true
 
     private val REQUEST_CODE_SPEECH = 1
 
@@ -44,7 +45,7 @@ putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
 }
 speechRecognizer.setRecognitionListener(object : RecognitionListener {
-private var isWakeMode = true
+
     override fun onResults(results: Bundle?) {
     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 

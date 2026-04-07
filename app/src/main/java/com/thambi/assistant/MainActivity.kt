@@ -81,11 +81,28 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
    
 
     override fun onError(error: Int) {
-    output.text = "Error code: $error"
 
-    Handler(Looper.getMainLooper()).postDelayed({
-        restartListening()
-    }, 1000)
+    when (error) {
+
+        SpeechRecognizer.ERROR_NO_MATCH,
+        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+            // normal — restart slowly
+            restartListening()
+        }
+
+        SpeechRecognizer.ERROR_CLIENT -> {
+            // 🔥 DO NOT restart immediately
+            Handler(Looper.getMainLooper()).postDelayed({
+                restartListening()
+            }, 2000)
+        }
+
+        else -> {
+            Handler(Looper.getMainLooper()).postDelayed({
+                restartListening()
+            }, 2500)
+        }
+    }
 }
 
     override fun onReadyForSpeech(params: Bundle?) {
@@ -168,14 +185,20 @@ if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
 
 
 private fun restartListening() {
+    if (isRestarting) return
+
+    isRestarting = true
+
     Handler(Looper.getMainLooper()).postDelayed({
         try {
             speechRecognizer.cancel()
             speechRecognizer.startListening(speechIntent)
         } catch (e: Exception) {
             output.text = "Restart failed: ${e.message}"
+        } finally {
+            isRestarting = false
         }
-    }, if (isWakeMode) 800 else 1500)
+    }, if (isWakeMode) 1200 else 1800)
 }
 
 

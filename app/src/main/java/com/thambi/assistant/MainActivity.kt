@@ -44,7 +44,7 @@ putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
 }
 speechRecognizer.setRecognitionListener(object : RecognitionListener {
-
+private var isWakeMode = true
     override fun onResults(results: Bundle?) {
     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
@@ -52,22 +52,40 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
         val spokenText = matches[0].lowercase()
         output.text = "Heard: $spokenText"
 
-        if (spokenText.contains("thambi") || 
-            spokenText.contains("tambi") || 
-            spokenText.contains("tamby")) {
+        // 🔥 WAKE WORD MODE
+        if (isWakeMode) {
+            if (spokenText.contains("thambi") ||
+                spokenText.contains("tambi") ||
+                spokenText.contains("tamby")) {
 
-            val cleanText = spokenText
-    .substringAfter("thambi", spokenText)
-    .substringAfter("tambi", spokenText)
-    .trim()
+                speak("Yes?")
+                isWakeMode = false
 
-            val reply = handleCommand(cleanText)
+                // Start full listening
+                startCommandListening()
+                return
+            }
+        } 
+        else {
+            // 🔥 COMMAND MODE
+            val reply = handleCommand(spokenText)
             output.append("\nThambi: $reply")
             speak(reply)
+
+            // go back to wake mode
+            isWakeMode = true
         }
     }
-
-   
+}
+    private fun startCommandListening() {
+    Handler(Looper.getMainLooper()).postDelayed({
+        try {
+            speechRecognizer.stopListening()
+            speechRecognizer.startListening(speechIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }, 500)
 }
 
     override fun onError(error: Int) {
@@ -123,20 +141,14 @@ restartListening()
 private var isListening = false
 
 private fun restartListening() {
-    if (isListening) return
-
-    isListening = true
-
     Handler(Looper.getMainLooper()).postDelayed({
         try {
-            speechRecognizer.cancel() // 🔥 important
+            speechRecognizer.cancel()
             speechRecognizer.startListening(speechIntent)
         } catch (e: Exception) {
             e.printStackTrace()
-        } finally {
-            isListening = false
         }
-    }, 2000) // 🔥 better delay
+    }, if (isWakeMode) 500 else 1500)
 }
 
 

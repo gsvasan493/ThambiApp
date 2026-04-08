@@ -36,17 +36,7 @@ private var isRestarting = false   // ✅ ADD THIS
         setContentView(R.layout.activity_main)
         output = findViewById(R.id.outputText)
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-
-speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
-putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-IN")
-putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "en-IN")
-putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-}
-recognitionListener = object : RecognitionListener {recognitionListener = object : RecognitionListener {
+        recognitionListener = object : RecognitionListener {
 
     override fun onResults(results: Bundle?) {
         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -100,15 +90,6 @@ recognitionListener = object : RecognitionListener {recognitionListener = object
     }
 
     override fun onPartialResults(partialResults: Bundle?) {
-        val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-        if (!matches.isNullOrEmpty()) {
-            output.text = "Listening: ${matches[0]}"
-        }
-    }
-
-    override fun onEvent(eventType: Int, params: Bundle?) {}
-}
-    override fun onPartialResults(partialResults: Bundle?) {
     val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
     if (!matches.isNullOrEmpty()) {
@@ -116,7 +97,14 @@ recognitionListener = object : RecognitionListener {recognitionListener = object
         output.text = "Listening: $text"
     }
 }
+    
+
     override fun onEvent(eventType: Int, params: Bundle?) {}
+    
+}
+
+    
+    
 
 speechRecognizer.setRecognitionListener(recognitionListener)
         if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
@@ -130,14 +118,25 @@ if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
     requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 100)
     return
 }
+
+speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
+putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-IN")
+putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "en-IN")
+putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+}
+
         
         
 
         tts = TextToSpeech(this, this)
 
-
-       
     }
+       
+    
     override fun onRequestPermissionsResult(
     requestCode: Int,
     permissions: Array<out String>,
@@ -153,6 +152,7 @@ if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
         output.text = "Microphone permission denied ❌"
     }
 }
+
     private fun startListeningProperly() {
     Handler(Looper.getMainLooper()).postDelayed({
         try {

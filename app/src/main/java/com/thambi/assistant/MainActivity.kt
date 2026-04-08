@@ -46,75 +46,67 @@ putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "en-IN")
 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
 }
-recognitionListener = object : RecognitionListener {
+recognitionListener = object : RecognitionListener {recognitionListener = object : RecognitionListener {
 
     override fun onResults(results: Bundle?) {
-    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+        val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
-    if (!matches.isNullOrEmpty()) {
-        val spokenText = matches[0].lowercase()
-        output.text = "Heard: $spokenText"
+        if (!matches.isNullOrEmpty()) {
+            val spokenText = matches[0].lowercase()
+            output.text = "Heard: $spokenText"
 
-        // 🔥 WAKE WORD MODE
-        if (isWakeMode) {
-            if (spokenText.contains("thambi") ||
-                spokenText.contains("tambi") ||
-                spokenText.contains("tamby")) {
+            if (isWakeMode) {
+                if (spokenText.contains("thambi") ||
+                    spokenText.contains("tambi") ||
+                    spokenText.contains("tamby")) {
 
-                speak("Yes?")
-                isWakeMode = false
-
-                // Start full listening
-                startCommandListening()
-                return
+                    speak("Yes?")
+                    isWakeMode = false
+                    startCommandListening()
+                    return
+                }
+            } else {
+                val reply = handleCommand(spokenText)
+                output.append("\nThambi: $reply")
+                speak(reply)
+                isWakeMode = true
             }
-        } 
-        else {
-            // 🔥 COMMAND MODE
-            val reply = handleCommand(spokenText)
-            output.append("\nThambi: $reply")
-            speak(reply)
-
-            // go back to wake mode
-            isWakeMode = true
         }
     }
-}
-   
 
     override fun onError(error: Int) {
+        when (error) {
+            SpeechRecognizer.ERROR_NO_MATCH,
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> restartListening()
 
-    when (error) {
-
-        SpeechRecognizer.ERROR_NO_MATCH,
-        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
-            // normal — restart slowly
-            restartListening()
-        }
-
-        SpeechRecognizer.ERROR_CLIENT -> {
-            // 🔥 DO NOT restart immediately
-            Handler(Looper.getMainLooper()).postDelayed({
-                restartListening()
-            }, 2000)
-        }
-
-        else -> {
-            Handler(Looper.getMainLooper()).postDelayed({
-                restartListening()
-            }, 2500)
+            else -> {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    restartListening()
+                }, 1500)
+            }
         }
     }
-}
 
     override fun onReadyForSpeech(params: Bundle?) {
-    output.text = "🎤 Listening..."
-}
+        output.text = "🎤 Listening..."
+    }
+
     override fun onBeginningOfSpeech() {}
     override fun onRmsChanged(rmsdB: Float) {}
     override fun onBufferReceived(buffer: ByteArray?) {}
+
     override fun onEndOfSpeech() {
-    restartListening()
+        restartListening()
+    }
+
+    override fun onPartialResults(partialResults: Bundle?) {
+        val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+        if (!matches.isNullOrEmpty()) {
+            output.text = "Listening: ${matches[0]}"
+        }
+    }
+
+    override fun onEvent(eventType: Int, params: Bundle?) {}
 }
     override fun onPartialResults(partialResults: Bundle?) {
     val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -125,7 +117,7 @@ recognitionListener = object : RecognitionListener {
     }
 }
     override fun onEvent(eventType: Int, params: Bundle?) {}
-})
+
 speechRecognizer.setRecognitionListener(recognitionListener)
         if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
     != PackageManager.PERMISSION_GRANTED) {

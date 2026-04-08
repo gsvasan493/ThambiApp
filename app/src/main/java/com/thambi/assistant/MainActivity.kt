@@ -26,8 +26,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var speechRecognizer: SpeechRecognizer
 private lateinit var speechIntent: Intent
     private var isWakeMode = true
+private var isRestarting = false   // ✅ ADD THIS
 
     private val REQUEST_CODE_SPEECH = 1
+    private lateinit var recognitionListener: RecognitionListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +46,7 @@ putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "en-IN")
 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
 }
-speechRecognizer.setRecognitionListener(object : RecognitionListener {
+recognitionListener = object : RecognitionListener {
 
     override fun onResults(results: Bundle?) {
     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -124,6 +126,7 @@ speechRecognizer.setRecognitionListener(object : RecognitionListener {
 }
     override fun onEvent(eventType: Int, params: Bundle?) {}
 })
+speechRecognizer.setRecognitionListener(recognitionListener)
         if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
     != PackageManager.PERMISSION_GRANTED) {
 
@@ -140,11 +143,7 @@ if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
 
         tts = TextToSpeech(this, this)
 
-if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
-    == PackageManager.PERMISSION_GRANTED) {
 
-    startListeningProperly()
-}
        
     }
     override fun onRequestPermissionsResult(
@@ -186,19 +185,19 @@ if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
 
 private fun restartListening() {
     if (isRestarting) return
-
     isRestarting = true
 
     Handler(Looper.getMainLooper()).postDelayed({
         try {
-            speechRecognizer.cancel()
+            speechRecognizer.destroy() // 🔥 IMPORTANT
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+            speechRecognizer.setRecognitionListener(recognitionListener) // FIX BELOW
             speechRecognizer.startListening(speechIntent)
         } catch (e: Exception) {
             output.text = "Restart failed: ${e.message}"
-        } finally {
-            isRestarting = false
         }
-    }, if (isWakeMode) 1200 else 1800)
+        isRestarting = false
+    }, 1200)
 }
 
 

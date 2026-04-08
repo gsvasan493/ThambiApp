@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var output: TextView
     private lateinit var tts: TextToSpeech
     private lateinit var speechRecognizer: SpeechRecognizer
-private lateinit var speechIntent: Intent
+private var speechIntent: Intent? = null
     private var isWakeMode = true
 private var isRestarting = false   // ✅ ADD THIS
 
@@ -153,7 +153,16 @@ putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
     }
 }
 
-    private fun startListeningProperly() {
+   private fun startListeningProperly() {
+    if (speechIntent == null) {
+        speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        }
+    }
+
     Handler(Looper.getMainLooper()).postDelayed({
         try {
             output.text = "🎤 Starting..."

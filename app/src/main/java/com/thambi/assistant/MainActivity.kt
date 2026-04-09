@@ -36,6 +36,12 @@ private var isRestarting = false   // ✅ ADD THIS
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         output = findViewById(R.id.outputText)
+        speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
+    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+}
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         recognitionListener = object : RecognitionListener {
 
@@ -114,35 +120,26 @@ private var isRestarting = false   // ✅ ADD THIS
     override fun onEvent(eventType: Int, params: Bundle?) {}
     
 }
-
-    
-    
+   
 
 speechRecognizer.setRecognitionListener(recognitionListener)
-        if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
-    != PackageManager.PERMISSION_GRANTED) {
+       val permissionsNeeded = mutableListOf<String>()
 
-    requestPermissions(arrayOf(android.Manifest.permission.READ_CONTACTS), 1)
-}
 if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
     != PackageManager.PERMISSION_GRANTED) {
-
-    requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 100)
-    return
+    permissionsNeeded.add(android.Manifest.permission.RECORD_AUDIO)
 }
 
-speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
-putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-IN")
-putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "en-IN")
-putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS)
+    != PackageManager.PERMISSION_GRANTED) {
+    permissionsNeeded.add(android.Manifest.permission.READ_CONTACTS)
 }
 
-        
-        
+if (permissionsNeeded.isNotEmpty()) {
+    requestPermissions(permissionsNeeded.toTypedArray(), 100)
+} else {
+    startListeningProperly()
+}
 
         tts = TextToSpeech(this, this)
 
@@ -156,12 +153,15 @@ putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
 ) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-    if (requestCode == 100 && grantResults.isNotEmpty()
-        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+    if (requestCode == 100) {
+        if (grantResults.isNotEmpty() &&
+            grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
 
-        startListeningProperly()
-    } else {
-        output.text = "Microphone permission denied ❌"
+            startListeningProperly()
+
+        } else {
+            output.text = "Permissions denied ❌"
+        }
     }
 }
 
@@ -173,7 +173,11 @@ putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
     Handler(Looper.getMainLooper()).postDelayed({
         try {
             output.text = "🎤 Starting..."
-            speechRecognizer.startListening(speechIntent)
+            speechIntent?.let {
+    speechRecognizer.startListening(it)
+} ?: run {
+    output.text = "Intent null ❌"
+}
         } catch (e: Exception) {
             output.text = "Start failed: ${e.message}"
             isListening = false
@@ -184,7 +188,11 @@ putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
     Handler(Looper.getMainLooper()).postDelayed({
         try {
             speechRecognizer.stopListening()
-            speechRecognizer.startListening(speechIntent)
+
+            speechIntent?.let {
+                speechRecognizer.startListening(it)
+            }
+
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -199,19 +207,19 @@ private fun restartListening() {
 
     Handler(Looper.getMainLooper()).postDelayed({
         try {
-            speechRecognizer.destroy()
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-            speechRecognizer.setRecognitionListener(recognitionListener)
+            speechRecognizer.stopListening()
 
             isListening = true
-            speechRecognizer.startListening(speechIntent)
+            speechIntent?.let {
+                speechRecognizer.startListening(it)
+            }
 
         } catch (e: Exception) {
             output.text = "Restart failed: ${e.message}"
             isListening = false
         }
         isRestarting = false
-    }, 800)
+    }, 700)
 }
 
 

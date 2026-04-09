@@ -400,11 +400,21 @@ private fun openAnyApp(appName: String): Boolean {
         if (label.contains(appName.lowercase()) ||
             appName.lowercase().contains(label)) {
 
-            val launchIntent = pm.getLaunchIntentForPackage(app.activityInfo.packageName)
-            if (launchIntent != null) {
-                startActivity(launchIntent)
-                return true
-            }
+            val packageName = app.activityInfo.packageName
+
+val launchIntent = pm.getLaunchIntentForPackage(packageName)
+
+if (launchIntent != null) {
+
+    launchIntent.addFlags(
+        Intent.FLAG_ACTIVITY_NEW_TASK or
+        Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED or
+        Intent.FLAG_ACTIVITY_CLEAR_TOP
+    )
+
+    startActivity(launchIntent)
+    return true
+}
         }
     }
     return false

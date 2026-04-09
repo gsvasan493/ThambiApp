@@ -26,8 +26,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var speechRecognizer: SpeechRecognizer
 private var speechIntent: Intent? = null
     private var isWakeMode = true
-private var isRestarting = false   // ✅ ADD THIS
+
     private var isListening = false
+    private val restartHandler = Handler(Looper.getMainLooper())
+private var restartRunnable: Runnable? = null
 
     private val REQUEST_CODE_SPEECH = 1
     private lateinit var recognitionListener: RecognitionListener
@@ -59,7 +61,9 @@ private var isRestarting = false   // ✅ ADD THIS
 
                 speak("Yes?")
                 isWakeMode = false
-                startCommandListening()
+
+                // 🔥 Give user time to speak command
+                scheduleRestart(2500)
                 return
             }
         } else {
@@ -70,29 +74,26 @@ private var isRestarting = false   // ✅ ADD THIS
         }
     }
 
-    // ✅ Restart ONLY after processing
-    restartListening()
+    // 🔥 Restart AFTER everything
+    scheduleRestart(1500)
 }
 
     override fun onError(error: Int) {
     when (error) {
-
         SpeechRecognizer.ERROR_NO_MATCH,
         SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
-            // Normal — restart
-            restartListening()
+            scheduleRestart(1000)
         }
 
         SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> {
-            // 🔥 DO NOTHING (important)
+            // do nothing
         }
 
         else -> {
-            Handler(Looper.getMainLooper()).postDelayed({
-                restartListening()
-            }, 1500)
+            scheduleRestart(1500)
         }
     }
+    isListening = false
 }
 
     override fun onReadyForSpeech(params: Bundle?) {
@@ -104,7 +105,7 @@ private var isRestarting = false   // ✅ ADD THIS
     override fun onBufferReceived(buffer: ByteArray?) {}
 
     override fun onEndOfSpeech() {
-       
+       isListening = false
     }
 
     override fun onPartialResults(partialResults: Bundle?) {
@@ -184,43 +185,33 @@ if (permissionsNeeded.isNotEmpty()) {
         }
     }, 500)
 }
-     private fun startCommandListening() {
-    Handler(Looper.getMainLooper()).postDelayed({
+  private fun scheduleRestart(delay: Long = 1500) {
+    restartRunnable?.let { restartHandler.removeCallbacks(it) }
+
+    restartRunnable = Runnable {
         try {
-            speechRecognizer.stopListening()
+            if (!isListening) {
+                isListening = true
 
-            speechIntent?.let {
-                speechRecognizer.startListening(it)
+                speechIntent?.let {
+                    speechRecognizer.startListening(it)
+                }
             }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }, 500)
-}
-
-
-private fun restartListening() {
-    if (isRestarting) return
-    isRestarting = true
-    isListening = false
-
-    Handler(Looper.getMainLooper()).postDelayed({
-        try {
-            speechRecognizer.stopListening()
-
-            isListening = true
-            speechIntent?.let {
-                speechRecognizer.startListening(it)
-            }
-
         } catch (e: Exception) {
             output.text = "Restart failed: ${e.message}"
             isListening = false
         }
-        isRestarting = false
-    }, 700)
+    }
+
+    restartHandler.postDelayed(restartRunnable!!, delay)
 }
+     private fun startCommandListening() {
+    isListening = false
+    scheduleRestart(300) // small delay instead of force restart
+}
+
+
+
 
 
    

@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 private var speechIntent: Intent? = null
     private var isWakeMode = true
 private var isRestarting = false   // ✅ ADD THIS
+    private var isListening = false
 
     private val REQUEST_CODE_SPEECH = 1
     private lateinit var recognitionListener: RecognitionListener
@@ -39,43 +40,54 @@ private var isRestarting = false   // ✅ ADD THIS
         recognitionListener = object : RecognitionListener {
 
     override fun onResults(results: Bundle?) {
-        val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
 
-        if (!matches.isNullOrEmpty()) {
-            val spokenText = matches[0].lowercase()
-            output.text = "Heard: $spokenText"
+    if (!matches.isNullOrEmpty()) {
+        val spokenText = matches[0].lowercase()
+        output.text = "Heard: $spokenText"
 
-            if (isWakeMode) {
-                if (spokenText.contains("thambi") ||
-                    spokenText.contains("tambi") ||
-                    spokenText.contains("tamby")) {
+        if (isWakeMode) {
+            if (spokenText.contains("thambi") ||
+                spokenText.contains("tambi") ||
+                spokenText.contains("tamby")) {
 
-                    speak("Yes?")
-                    isWakeMode = false
-                    startCommandListening()
-                    return
-                }
-            } else {
-                val reply = handleCommand(spokenText)
-                output.append("\nThambi: $reply")
-                speak(reply)
-                isWakeMode = true
+                speak("Yes?")
+                isWakeMode = false
+                startCommandListening()
+                return
             }
+        } else {
+            val reply = handleCommand(spokenText)
+            output.append("\nThambi: $reply")
+            speak(reply)
+            isWakeMode = true
         }
     }
+
+    // ✅ Restart ONLY after processing
+    restartListening()
+}
 
     override fun onError(error: Int) {
-        when (error) {
-            SpeechRecognizer.ERROR_NO_MATCH,
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> restartListening()
+    when (error) {
 
-            else -> {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    restartListening()
-                }, 1500)
-            }
+        SpeechRecognizer.ERROR_NO_MATCH,
+        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+            // Normal — restart
+            restartListening()
+        }
+
+        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> {
+            // 🔥 DO NOTHING (important)
+        }
+
+        else -> {
+            Handler(Looper.getMainLooper()).postDelayed({
+                restartListening()
+            }, 1500)
         }
     }
+}
 
     override fun onReadyForSpeech(params: Bundle?) {
         output.text = "🎤 Listening..."
@@ -86,7 +98,7 @@ private var isRestarting = false   // ✅ ADD THIS
     override fun onBufferReceived(buffer: ByteArray?) {}
 
     override fun onEndOfSpeech() {
-        restartListening()
+       
     }
 
     override fun onPartialResults(partialResults: Bundle?) {
@@ -153,15 +165,10 @@ putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
     }
 }
 
-   private fun startListeningProperly() {
-    if (speechIntent == null) {
-        speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        }
-    }
+  private fun startListeningProperly() {
+    if (isListening) return
+
+    isListening = true
 
     Handler(Looper.getMainLooper()).postDelayed({
         try {
@@ -169,8 +176,9 @@ putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             speechRecognizer.startListening(speechIntent)
         } catch (e: Exception) {
             output.text = "Start failed: ${e.message}"
+            isListening = false
         }
-    }, 1000)
+    }, 500)
 }
      private fun startCommandListening() {
     Handler(Looper.getMainLooper()).postDelayed({
@@ -187,18 +195,23 @@ putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
 private fun restartListening() {
     if (isRestarting) return
     isRestarting = true
+    isListening = false
 
     Handler(Looper.getMainLooper()).postDelayed({
         try {
-            speechRecognizer.destroy() // 🔥 IMPORTANT
+            speechRecognizer.destroy()
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-            speechRecognizer.setRecognitionListener(recognitionListener) // FIX BELOW
+            speechRecognizer.setRecognitionListener(recognitionListener)
+
+            isListening = true
             speechRecognizer.startListening(speechIntent)
+
         } catch (e: Exception) {
             output.text = "Restart failed: ${e.message}"
+            isListening = false
         }
         isRestarting = false
-    }, 1200)
+    }, 800)
 }
 
 
